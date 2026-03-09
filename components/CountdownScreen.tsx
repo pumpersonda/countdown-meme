@@ -19,6 +19,7 @@ export interface PaydayPreferences {
   frequency: 'monthly' | 'bi-weekly';
   payment_days: number[];
   interests: string[];
+  primary_color?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -27,51 +28,102 @@ interface CountdownScreenProps {
   onReset: () => void;
 }
 
-const MOOD_IMAGES: Record<string, string[]> = {
-  happy: [
-    'https://images.pexels.com/photos/1404819/pexels-photo-1404819.jpeg',
-    'https://images.pexels.com/photos/91227/pexels-photo-91227.jpeg'
-  ],
-  neutral: [
-    'https://images.pexels.com/photos/1741205/pexels-photo-1741205.jpeg',
-    'https://images.pexels.com/photos/356378/pexels-photo-356378.jpeg'
-  ],
-  worried: [
-    'https://images.pexels.com/photos/1420701/pexels-photo-1420701.jpeg',
-    'https://images.pexels.com/photos/3772618/pexels-photo-3772618.jpeg'
-  ],
-  sad: [
-    'https://images.pexels.com/photos/2194261/pexels-photo-2194261.jpeg',
-    'https://images.pexels.com/photos/1024311/pexels-photo-1024311.jpeg'
-  ]
+// === NUEVA ESTRUCTURA: Imágenes por INTERÉS + por estado de ánimo ===
+const IMAGES_DB: Record<string, Record<string, string[]>> = {
+  generic: {
+    happy: [
+      'https://images.pexels.com/photos/1404819/pexels-photo-1404819.jpeg',
+      'https://images.pexels.com/photos/91227/pexels-photo-91227.jpeg'
+    ],
+    neutral: [
+      'https://images.pexels.com/photos/1741205/pexels-photo-1741205.jpeg',
+      'https://images.pexels.com/photos/356378/pexels-photo-356378.jpeg'
+    ],
+    worried: [
+      'https://images.pexels.com/photos/1420701/pexels-photo-1420701.jpeg',
+      'https://images.pexels.com/photos/3772618/pexels-photo-3772618.jpeg'
+    ],
+    sad: [
+      'https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExNnB3NjdkMDF0ZjhyYTN5M256cnF5M2cxOWJwcnVxdDVsd3Q4Z29rZiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/98MaHVwJOmWMz4cz1K/giphy.gif',
+      'https://images.pexels.com/photos/2194261/pexels-photo-2194261.jpeg',
+      'https://images.pexels.com/photos/1024311/pexels-photo-1024311.jpeg'
+    ]
+  },
+
+  // Ejemplo completo para "gatos" (puedes copiar esta estructura para los demás intereses)
+  gatos: {
+    happy: [
+      'https://images.pexels.com/photos/104827/pexels-photo-104827.jpeg',
+      'https://images.pexels.com/photos/1170986/pexels-photo-1170986.jpeg',
+      'https://images.pexels.com/photos/45201/pexels-photo-45201.jpeg'
+    ],
+    neutral: [
+      'https://images.pexels.com/photos/20787/pexels-photo-20787.jpeg',
+      'https://images.pexels.com/photos/144098/pexels-photo-144098.jpeg'
+    ],
+    worried: [
+      'https://images.pexels.com/photos/248547/pexels-photo-248547.jpeg'
+    ],
+    sad: [
+      'https://images.pexels.com/photos/25033908/pexels-photo-25033908.jpeg',
+      'https://images.pexels.com/photos/1564504/pexels-photo-1564504.jpeg'
+    ]
+  },
+
+  // Puedes duplicar o personalizar para otros intereses
+  mascotas: {
+    happy: [
+      'https://images.pexels.com/photos/1805164/pexels-photo-1805164.jpeg', // perro feliz
+      'https://images.pexels.com/photos/1809343/pexels-photo-1809343.jpeg'
+    ],
+    neutral: [],
+    worried: [],
+    sad: []
+  },
+
+  // TODO: agrega aquí memes, videojuegos, películas, etc.
+  memes: { happy: [], neutral: [], worried: [], sad: [] },
+  videojuegos: { happy: [], neutral: [], worried: [], sad: [] },
+  películas: { happy: [], neutral: [], worried: [], sad: [] },
+  series: { happy: [], neutral: [], worried: [], sad: [] },
+  música: { happy: [], neutral: [], worried: [], sad: [] },
+  deportes: { happy: [], neutral: [], worried: [], sad: [] },
+  comida: { happy: [], neutral: [], worried: [], sad: [] },
+  viajes: { happy: [], neutral: [], worried: [], sad: [] }
 };
 
 export default function CountdownScreen({ onReset }: CountdownScreenProps) {
   const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [preferences, setPreferences] = useState<PaydayPreferences | null>(
-    null
-  );
+  const [preferences, setPreferences] = useState<PaydayPreferences | null>(null);
+  const [primaryColor, setPrimaryColor] = useState('#007AFF');
 
   const [selectedCategory, setSelectedCategory] = useState<string>('neutral');
   const [imageIndex, setImageIndex] = useState(0);
+  const [currentInterest, setCurrentInterest] = useState<string>('generic'); // ← NUEVO
 
   useEffect(() => {
     loadPreferences();
   }, []);
 
-
   const loadPreferences = async () => {
     try {
       const stored = await AsyncStorage.getItem('payday_preferences');
+      if (!stored) return;
 
-      if (!stored) {
-        return;
-      }
-
-      const data = JSON.parse(stored);
+      const data: PaydayPreferences = JSON.parse(stored);
 
       setPreferences(data);
+      setPrimaryColor(data.primary_color || '#007AFF');
+
+      // === NUEVA LÓGICA: elegimos un interés del usuario al azar ===
+      const userInterests = data.interests || [];
+      const chosenInterest =
+        userInterests.length > 0
+          ? userInterests[Math.floor(Math.random() * userInterests.length)]
+          : 'generic';
+
+      setCurrentInterest(chosenInterest);
 
       const days = calculateDaysUntilPayday(
         data.frequency,
@@ -81,7 +133,6 @@ export default function CountdownScreen({ onReset }: CountdownScreenProps) {
       setDaysRemaining(days);
 
       const mood = getMoodCategory(days);
-
       setSelectedCategory(mood);
       setImageIndex(0);
     } catch (error) {
@@ -91,14 +142,18 @@ export default function CountdownScreen({ onReset }: CountdownScreenProps) {
     }
   };
 
-  const images = MOOD_IMAGES[selectedCategory] || [];
-  const imageUrl = images[imageIndex];
+  // === NUEVA LÓGICA: imágenes del interés + mood (fallback a generic) ===
+  const images =
+    IMAGES_DB[currentInterest]?.[selectedCategory] ||
+    IMAGES_DB.generic[selectedCategory] ||
+    [];
 
+  const imageUrl = images[imageIndex];
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={primaryColor} />
       </View>
     );
   }
@@ -107,7 +162,10 @@ export default function CountdownScreen({ onReset }: CountdownScreenProps) {
     return (
       <View style={styles.container}>
         <Text style={styles.errorText}>No payday preferences found</Text>
-        <TouchableOpacity style={styles.resetButton} onPress={onReset}>
+        <TouchableOpacity
+          style={[styles.resetButton, { backgroundColor: primaryColor }]}
+          onPress={onReset}
+        >
           <Text style={styles.resetButtonText}>Setup Payday</Text>
         </TouchableOpacity>
       </View>
@@ -132,7 +190,10 @@ export default function CountdownScreen({ onReset }: CountdownScreenProps) {
           </View>
         )}
 
-        <TouchableOpacity style={styles.resetButton} onPress={onReset}>
+        <TouchableOpacity
+          style={[styles.resetButton, { backgroundColor: primaryColor }]}
+          onPress={onReset}
+        >
           <Text style={styles.resetButtonText}>Cambiar ajustes</Text>
         </TouchableOpacity>
       </View>
@@ -179,47 +240,7 @@ const styles = StyleSheet.create({
     height: '100%'
   },
 
-  imageControls: {
-    position: 'absolute',
-    bottom: 10,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20
-  },
-
-  controlText: {
-    fontSize: 28,
-    color: '#fff',
-    fontWeight: '700'
-  },
-
-  categorySelector: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center'
-  },
-
-  categoryButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    margin: 6,
-    borderRadius: 8,
-    backgroundColor: '#e0e0e0'
-  },
-
-  categorySelected: {
-    backgroundColor: '#007AFF'
-  },
-
-  categoryText: {
-    color: '#000',
-    fontWeight: '600'
-  },
-
   resetButton: {
-    backgroundColor: '#007AFF',
     paddingVertical: 16,
     paddingHorizontal: 32,
     borderRadius: 12,

@@ -22,6 +22,17 @@ const INTERESTS = [
   'viajes'
 ];
 
+const PRIMARY_COLORS = [
+  '#007AFF', // Azul original
+  '#FF3B30', // Rojo
+  '#34C759', // Verde
+  '#FF9500', // Naranja
+  '#5856D6', // Morado
+  '#AF52DE', // Violeta
+  '#FF2D55', // Rosa fuerte
+  '#00C7BE'  // Turquesa
+];
+
 interface SetupScreenProps {
   onComplete: () => void;
 }
@@ -33,6 +44,7 @@ export default function SetupScreen({ onComplete }: SetupScreenProps) {
   const [paymentDay1, setPaymentDay1] = useState('');
   const [paymentDay2, setPaymentDay2] = useState('');
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+  const [primaryColor, setPrimaryColor] = useState('#007AFF');
   const [loading, setLoading] = useState(false);
 
   const toggleInterest = (interest: string) => {
@@ -69,6 +81,7 @@ export default function SetupScreen({ onComplete }: SetupScreenProps) {
         frequency,
         payment_days: paymentDays,
         interests: selectedInterests,
+        primary_color: primaryColor,
         updated_at: new Date().toISOString()
       };
 
@@ -95,14 +108,17 @@ export default function SetupScreen({ onComplete }: SetupScreenProps) {
           <TouchableOpacity
             style={[
               styles.frequencyButton,
-              frequency === 'monthly' && styles.frequencyButtonActive
+              frequency === 'monthly' && {
+                backgroundColor: primaryColor,
+                borderColor: primaryColor
+              }
             ]}
             onPress={() => setFrequency('monthly')}
           >
             <Text
               style={[
                 styles.frequencyText,
-                frequency === 'monthly' && styles.frequencyTextActive
+                frequency === 'monthly' && { color: '#fff' }
               ]}
             >
               Mensual
@@ -112,14 +128,17 @@ export default function SetupScreen({ onComplete }: SetupScreenProps) {
           <TouchableOpacity
             style={[
               styles.frequencyButton,
-              frequency === 'bi-weekly' && styles.frequencyButtonActive
+              frequency === 'bi-weekly' && {
+                backgroundColor: primaryColor,
+                borderColor: primaryColor
+              }
             ]}
             onPress={() => setFrequency('bi-weekly')}
           >
             <Text
               style={[
                 styles.frequencyText,
-                frequency === 'bi-weekly' && styles.frequencyTextActive
+                frequency === 'bi-weekly' && { color: '#fff' }
               ]}
             >
               Quincenal
@@ -168,15 +187,17 @@ export default function SetupScreen({ onComplete }: SetupScreenProps) {
                 key={interest}
                 style={[
                   styles.tag,
-                  selectedInterests.includes(interest) && styles.tagSelected
+                  selectedInterests.includes(interest) && {
+                    backgroundColor: primaryColor,
+                    borderColor: primaryColor
+                  }
                 ]}
                 onPress={() => toggleInterest(interest)}
               >
                 <Text
                   style={[
                     styles.tagText,
-                    selectedInterests.includes(interest) &&
-                    styles.tagTextSelected
+                    selectedInterests.includes(interest) && { color: '#fff' }
                   ]}
                 >
                   {interest}
@@ -186,8 +207,30 @@ export default function SetupScreen({ onComplete }: SetupScreenProps) {
           </View>
         </View>
 
+        {/* === NUEVA SECCIÓN: Color de los botones === */}
+        <View style={styles.colorContainer}>
+          <Text style={styles.label}>Color de los botones:</Text>
+          <View style={styles.colorsContainer}>
+            {PRIMARY_COLORS.map((color) => (
+              <TouchableOpacity
+                key={color}
+                style={[
+                  styles.colorSwatch,
+                  { backgroundColor: color },
+                  primaryColor === color && styles.colorSwatchSelected
+                ]}
+                onPress={() => setPrimaryColor(color)}
+              />
+            ))}
+          </View>
+        </View>
+
         <TouchableOpacity
-          style={[styles.submitButton, loading && styles.submitButtonDisabled]}
+          style={[
+            styles.submitButton,
+            { backgroundColor: primaryColor },
+            loading && styles.submitButtonDisabled
+          ]}
           onPress={handleSubmit}
           disabled={loading}
         >
@@ -231,17 +274,10 @@ const styles = StyleSheet.create({
     borderColor: '#e0e0e0',
     alignItems: 'center'
   },
-  frequencyButtonActive: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF'
-  },
   frequencyText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#666'
-  },
-  frequencyTextActive: {
-    color: '#fff'
   },
   inputContainer: {
     marginBottom: 30
@@ -279,20 +315,32 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e0e0e0'
   },
-  tagSelected: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF'
-  },
   tagText: {
     fontSize: 14,
     fontWeight: '500',
     color: '#666'
   },
-  tagTextSelected: {
-    color: '#fff'
+  colorContainer: {
+    marginBottom: 30
+  },
+  colorsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'flex-start'
+  },
+  colorSwatch: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 3,
+    borderColor: '#e0e0e0'
+  },
+  colorSwatchSelected: {
+    borderColor: '#1a1a1a',
+    borderWidth: 4
   },
   submitButton: {
-    backgroundColor: '#007AFF',
     paddingVertical: 18,
     borderRadius: 12,
     alignItems: 'center',
