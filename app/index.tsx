@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import SetupScreen from '@/components/SetupScreen';
 import CountdownScreen from '@/components/CountdownScreen';
-import { supabase } from '@/lib/supabase';
 
 export default function Index() {
   const [hasPreferences, setHasPreferences] = useState<boolean | null>(null);
@@ -14,13 +15,9 @@ export default function Index() {
 
   const checkPreferences = async () => {
     try {
-      const { data } = await supabase
-        .from('payday_preferences')
-        .select('id')
-        .eq('user_id', 'default-user')
-        .maybeSingle();
+      const stored = await AsyncStorage.getItem('payday_preferences');
 
-      setHasPreferences(!!data);
+      setHasPreferences(!!stored);
     } catch (error) {
       console.error('Error checking preferences:', error);
       setHasPreferences(false);
@@ -33,7 +30,13 @@ export default function Index() {
     setHasPreferences(true);
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
+    try {
+      await AsyncStorage.removeItem('payday_preferences');
+    } catch (error) {
+      console.error('Error clearing preferences:', error);
+    }
+
     setHasPreferences(false);
   };
 

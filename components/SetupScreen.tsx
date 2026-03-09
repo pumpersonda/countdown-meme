@@ -5,21 +5,21 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  TextInput,
+  TextInput
 } from 'react-native';
-import { supabase, PaydayPreferences } from '@/lib/supabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const INTERESTS = [
-  'cats',
-  'pets',
+  'gatos',
+  'mascotas',
   'memes',
-  'video games',
-  'movies',
+  'videojuegos',
+  'películas',
   'series',
-  'music',
-  'sports',
-  'food',
-  'travel',
+  'música',
+  'deportes',
+  'comida',
+  'viajes'
 ];
 
 interface SetupScreenProps {
@@ -48,13 +48,13 @@ export default function SetupScreen({ onComplete }: SetupScreenProps) {
     const day2 = parseInt(paymentDay2);
 
     if (isNaN(day1) || day1 < 1 || day1 > 31) {
-      alert('Please enter a valid payment day (1-31)');
+      alert('Por favor ingresa un día de pago válido (1-31)');
       return;
     }
 
     if (frequency === 'bi-weekly') {
       if (isNaN(day2) || day2 < 1 || day2 > 31) {
-        alert('Please enter valid payment days for bi-weekly (1-31)');
+        alert('Por favor ingresa días de pago válidos para quincenal (1-31)');
         return;
       }
     }
@@ -65,35 +65,22 @@ export default function SetupScreen({ onComplete }: SetupScreenProps) {
     setLoading(true);
 
     try {
-      const userId = 'default-user';
-
-      const { data: existing } = await supabase
-        .from('payday_preferences')
-        .select('id')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      const preferences: Partial<PaydayPreferences> = {
-        user_id: userId,
+      const preferences = {
         frequency,
         payment_days: paymentDays,
         interests: selectedInterests,
-        updated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
 
-      if (existing) {
-        await supabase
-          .from('payday_preferences')
-          .update(preferences)
-          .eq('user_id', userId);
-      } else {
-        await supabase.from('payday_preferences').insert(preferences);
-      }
+      await AsyncStorage.setItem(
+        'payday_preferences',
+        JSON.stringify(preferences)
+      );
 
       onComplete();
     } catch (error) {
       console.error('Error saving preferences:', error);
-      alert('Failed to save preferences. Please try again.');
+      alert('No se pudieron guardar las preferencias. Inténtalo de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -102,40 +89,40 @@ export default function SetupScreen({ onComplete }: SetupScreenProps) {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.header}>When do you get paid?</Text>
+        <Text style={styles.header}>¿Cuándo te pagan?</Text>
 
         <View style={styles.frequencyContainer}>
           <TouchableOpacity
             style={[
               styles.frequencyButton,
-              frequency === 'monthly' && styles.frequencyButtonActive,
+              frequency === 'monthly' && styles.frequencyButtonActive
             ]}
             onPress={() => setFrequency('monthly')}
           >
             <Text
               style={[
                 styles.frequencyText,
-                frequency === 'monthly' && styles.frequencyTextActive,
+                frequency === 'monthly' && styles.frequencyTextActive
               ]}
             >
-              Monthly
+              Mensual
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[
               styles.frequencyButton,
-              frequency === 'bi-weekly' && styles.frequencyButtonActive,
+              frequency === 'bi-weekly' && styles.frequencyButtonActive
             ]}
             onPress={() => setFrequency('bi-weekly')}
           >
             <Text
               style={[
                 styles.frequencyText,
-                frequency === 'bi-weekly' && styles.frequencyTextActive,
+                frequency === 'bi-weekly' && styles.frequencyTextActive
               ]}
             >
-              Bi-weekly
+              Quincenal
             </Text>
           </TouchableOpacity>
         </View>
@@ -143,27 +130,29 @@ export default function SetupScreen({ onComplete }: SetupScreenProps) {
         <View style={styles.inputContainer}>
           <Text style={styles.label}>
             {frequency === 'monthly'
-              ? 'Payment day of the month (1-31):'
-              : 'First payment day (1-31):'}
+              ? 'Día de pago del mes (1-31):'
+              : 'Primer día de pago (1-31):'}
           </Text>
+
           <TextInput
             style={styles.input}
             value={paymentDay1}
             onChangeText={setPaymentDay1}
             keyboardType="number-pad"
-            placeholder="e.g., 15"
+            placeholder="ej. 15"
             placeholderTextColor="#999"
           />
 
           {frequency === 'bi-weekly' && (
             <>
-              <Text style={styles.label}>Second payment day (1-31):</Text>
+              <Text style={styles.label}>Segundo día de pago (1-31):</Text>
+
               <TextInput
                 style={styles.input}
                 value={paymentDay2}
                 onChangeText={setPaymentDay2}
                 keyboardType="number-pad"
-                placeholder="e.g., 30"
+                placeholder="ej. 30"
                 placeholderTextColor="#999"
               />
             </>
@@ -171,14 +160,15 @@ export default function SetupScreen({ onComplete }: SetupScreenProps) {
         </View>
 
         <View style={styles.interestsContainer}>
-          <Text style={styles.label}>Your Interests:</Text>
+          <Text style={styles.label}>Tus intereses:</Text>
+
           <View style={styles.tagsContainer}>
             {INTERESTS.map((interest) => (
               <TouchableOpacity
                 key={interest}
                 style={[
                   styles.tag,
-                  selectedInterests.includes(interest) && styles.tagSelected,
+                  selectedInterests.includes(interest) && styles.tagSelected
                 ]}
                 onPress={() => toggleInterest(interest)}
               >
@@ -186,7 +176,7 @@ export default function SetupScreen({ onComplete }: SetupScreenProps) {
                   style={[
                     styles.tagText,
                     selectedInterests.includes(interest) &&
-                      styles.tagTextSelected,
+                    styles.tagTextSelected
                   ]}
                 >
                   {interest}
@@ -202,7 +192,7 @@ export default function SetupScreen({ onComplete }: SetupScreenProps) {
           disabled={loading}
         >
           <Text style={styles.submitButtonText}>
-            {loading ? 'Saving...' : 'Submit'}
+            {loading ? 'Guardando...' : 'Guardar'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -213,23 +203,23 @@ export default function SetupScreen({ onComplete }: SetupScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#f8f9fa'
   },
   content: {
     padding: 20,
-    paddingTop: 60,
+    paddingTop: 60
   },
   header: {
     fontSize: 28,
     fontWeight: '700',
     color: '#1a1a1a',
     marginBottom: 30,
-    textAlign: 'center',
+    textAlign: 'center'
   },
   frequencyContainer: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 30,
+    marginBottom: 30
   },
   frequencyButton: {
     flex: 1,
@@ -239,28 +229,28 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderWidth: 2,
     borderColor: '#e0e0e0',
-    alignItems: 'center',
+    alignItems: 'center'
   },
   frequencyButtonActive: {
     backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
+    borderColor: '#007AFF'
   },
   frequencyText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#666',
+    color: '#666'
   },
   frequencyTextActive: {
-    color: '#fff',
+    color: '#fff'
   },
   inputContainer: {
-    marginBottom: 30,
+    marginBottom: 30
   },
   label: {
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 12,
+    marginBottom: 12
   },
   input: {
     backgroundColor: '#fff',
@@ -271,15 +261,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: 16,
     color: '#1a1a1a',
-    marginBottom: 16,
+    marginBottom: 16
   },
   interestsContainer: {
-    marginBottom: 30,
+    marginBottom: 30
   },
   tagsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 10
   },
   tag: {
     paddingVertical: 10,
@@ -287,33 +277,33 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: '#e0e0e0'
   },
   tagSelected: {
     backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
+    borderColor: '#007AFF'
   },
   tagText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#666',
+    color: '#666'
   },
   tagTextSelected: {
-    color: '#fff',
+    color: '#fff'
   },
   submitButton: {
     backgroundColor: '#007AFF',
     paddingVertical: 18,
     borderRadius: 12,
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 40
   },
   submitButtonDisabled: {
-    opacity: 0.6,
+    opacity: 0.6
   },
   submitButtonText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#fff',
-  },
+    color: '#fff'
+  }
 });
