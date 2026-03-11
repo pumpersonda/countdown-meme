@@ -25,10 +25,9 @@ export interface PaydayPreferences {
 }
 
 interface CountdownScreenProps {
-  onReset: () => void;
+  changeSetup: () => void;
 }
 
-// === NUEVA ESTRUCTURA: Imágenes por INTERÉS + por estado de ánimo ===
 const IMAGES_DB: Record<string, Record<string, string[]>> = {
   generic: {
     happy: [
@@ -50,35 +49,39 @@ const IMAGES_DB: Record<string, Record<string, string[]>> = {
     ]
   },
 
-  // Ejemplo completo para "gatos" (puedes copiar esta estructura para los demás intereses)
   gatos: {
     happy: [
-      'https://images.pexels.com/photos/104827/pexels-photo-104827.jpeg',
+      'https://m.media-amazon.com/images/I/71nZPk6ytzL._AC_SL1500_.jpg',
       'https://images.pexels.com/photos/1170986/pexels-photo-1170986.jpeg',
-      'https://images.pexels.com/photos/45201/pexels-photo-45201.jpeg'
+      'https://thumbs.dreamstime.com/b/gato-feliz-con-sonrisa-divertida-en-la-cartulina-aislada-blanco-103832511.jpg?w=768'
     ],
     neutral: [
-      'https://images.pexels.com/photos/20787/pexels-photo-20787.jpeg',
-      'https://images.pexels.com/photos/144098/pexels-photo-144098.jpeg'
+      'https://imgs.search.brave.com/pZl85ZUK0r9SLiA92fhJrf_cV94q3XZVVr_LMu2tnpU/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9paDEu/cmVkYnViYmxlLm5l/dC9pbWFnZS41OTE4/MDUzODcyLjA0NjYv/cHAsNTA0eDQ5OC1w/YWQsNjAweDYwMCxm/OGY4ZjgudTIuanBn',
+      'https://imgs.search.brave.com/VD_-oZ7TTtj0OdLlr0EagIlsZwxdU35LHUUlRqEuyD0/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9paDEu/cmVkYnViYmxlLm5l/dC9pbWFnZS4zMDE4/NTMxNDU4Ljc1Mjkv/ZnBvc3RlcixzbWFs/bCx3YWxsX3RleHR1/cmUsc3F1YXJlX3By/b2R1Y3QsNjAweDYw/MC5qcGc'
     ],
     worried: [
-      'https://images.pexels.com/photos/248547/pexels-photo-248547.jpeg'
+      'https://imgs.search.brave.com/M_6XYvS7zlKhgxMqQt3Oyh9aCmAg8TNpCvzl9zMDhhA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tZWRp/YS5nZXR0eWltYWdl/cy5jb20vaWQvMTMw/NDA4MTc3Ny9waG90/by9icml0aXNoLXNo/b3J0aGFpci1jYXQu/anBnP3M9NjEyeDYx/MiZ3PTAmaz0yMCZj/PWR0NVZjNUtSRmlp/Q2o2TmlGUl9rcVJa/a2NreVdsMWVqS0lw/ZjJ1T3VjaWM9'
     ],
     sad: [
-      'https://images.pexels.com/photos/25033908/pexels-photo-25033908.jpeg',
-      'https://images.pexels.com/photos/1564504/pexels-photo-1564504.jpeg'
+      'https://imgs.search.brave.com/EQCAlzdEhvcoJW1lxT33rcKGPaHR63GylmFZHYhfCRE/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tZWRp/YTQuZ2lwaHkuY29t/L21lZGlhL3YxLlky/bGtQVGM1TUdJM05q/RXhjV1YyY0RCcGRU/VTJhRGR3TTJ0MWFu/cGxObll6Tkhsck1X/eHFOMkp6YkRad2R6/aHRhWFZsT1NabGNE/MTJNVjluYVdaelgz/TmxZWEpqYUNaamRE/MW4vN0F6RVhkSWIx/d3lDVFdKbnRiL2dp/cGh5LmdpZg.gif',
+      'https://imgs.search.brave.com/GE5ue18SErDh6cbTpcsMMAA-fWcT0jFH5AWUUPEntt0/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93YWxs/cGFwZXJzLmNvbS9p/bWFnZXMvaGQvc2Fk/LWNhdC1waWN0dXJl/cy1wZ2k0ZDA5NGVi/YTdiMTl0LmpwZw'
     ]
   },
-
-  // Puedes duplicar o personalizar para otros intereses
   mascotas: {
     happy: [
-      'https://images.pexels.com/photos/1805164/pexels-photo-1805164.jpeg', // perro feliz
-      'https://images.pexels.com/photos/1809343/pexels-photo-1809343.jpeg'
+      'https://imgs.search.brave.com/0uUff7ADCphi-svC1cUEv9YSJxG-RT2YuLu3r72NmOY/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pLndh/aHVwLmNvbS9tZWRp/YS90bXBfbWVtZV9p/bWFnZXMvYTE5MWI4/MWYtYTAwNC00NGJm/LWJlZTgtZmI4NzI1/YmNlZmNlLnBuZw', // perro feliz
+      'https://imgs.search.brave.com/tv9qjDo0OYoU9_BEKsGTL2dYiJQKJAKRZRYtvu8RaqQ/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pLmlt/Z2ZsaXAuY29tLzQv/MjA4amdiLmpwZw'
     ],
-    neutral: [],
-    worried: [],
-    sad: []
+    neutral: [
+      'https://imgs.search.brave.com/mJA6mqA2je7DRmm0iuF0j8ZWhkvr-wlLSOCDcQGXnCU/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tZWRp/YS5pc3RvY2twaG90/by5jb20vaWQvNDgy/MDE1NDk4L3Bob3Rv/L3NlcmlvdXMtZG9n/LWluLWdsYXNzZXMt/cmVhZGluZy1hLWJv/b2suanBnP3M9NjEy/eDYxMiZ3PTAmaz0y/MCZjPVROVnA5enl4/Sjd3Y3BqTEY1Yk5M/YVE2UFhoYzJRMUsx/RnJIX3dmM2JOYVE9',
+      'https://imgs.search.brave.com/VPO40WUjX35tM16Pyv8cCVOhklH3k3p9x2Q5goS_CKE/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tZWRp/YS50ZW5vci5jb20v/MnJtNnpVQUR2bGdB/QUFBTS9kb2ctc2Vy/aW91cy5naWY.gif'
+    ],
+    worried: [
+      'https://imgs.search.brave.com/cC6l2TZEFPxufRdushWdwgrNlR8AYMlyfg0CW2XKWYE/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tZWRp/YS5nZXR0eWltYWdl/cy5jb20vaWQvMTM1/NTcxNTE5My9waG90/by93b3JyaWVkLWRv/Zy1pbi1jYXItbmVy/dm91cy1kb2ctaW4t/Y2FyLmpwZz9zPTYx/Mng2MTImdz0wJms9/MjAmYz1PaGpGX2Y2/QklhcmM5WE1qOXhf/dHdhcFVoYXZ1ZzUz/dlFuemdzNjloUFFJ/PQ'
+    ],
+    sad: [
+      'https://imgs.search.brave.com/E-xQkaWkaErpK1po_4izeQRGVLk4cW51fwxMRa7hqM4/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pLmlt/Z2ZsaXAuY29tLzQv/YWVtNGYuanBn'
+    ]
   },
 
   // TODO: agrega aquí memes, videojuegos, películas, etc.
@@ -92,7 +95,7 @@ const IMAGES_DB: Record<string, Record<string, string[]>> = {
   viajes: { happy: [], neutral: [], worried: [], sad: [] }
 };
 
-export default function CountdownScreen({ onReset }: CountdownScreenProps) {
+export default function CountdownScreen({ changeSetup }: CountdownScreenProps) {
   const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [preferences, setPreferences] = useState<PaydayPreferences | null>(null);
@@ -116,7 +119,7 @@ export default function CountdownScreen({ onReset }: CountdownScreenProps) {
       setPreferences(data);
       setPrimaryColor(data.primary_color || '#007AFF');
 
-      // === NUEVA LÓGICA: elegimos un interés del usuario al azar ===
+      // Chosse one randomly
       const userInterests = data.interests || [];
       const chosenInterest =
         userInterests.length > 0
@@ -142,7 +145,6 @@ export default function CountdownScreen({ onReset }: CountdownScreenProps) {
     }
   };
 
-  // === NUEVA LÓGICA: imágenes del interés + mood (fallback a generic) ===
   const images =
     IMAGES_DB[currentInterest]?.[selectedCategory] ||
     IMAGES_DB.generic[selectedCategory] ||
@@ -164,7 +166,7 @@ export default function CountdownScreen({ onReset }: CountdownScreenProps) {
         <Text style={styles.errorText}>No payday preferences found</Text>
         <TouchableOpacity
           style={[styles.resetButton, { backgroundColor: primaryColor }]}
-          onPress={onReset}
+          onPress={changeSetup}
         >
           <Text style={styles.resetButtonText}>Setup Payday</Text>
         </TouchableOpacity>
@@ -192,7 +194,7 @@ export default function CountdownScreen({ onReset }: CountdownScreenProps) {
 
         <TouchableOpacity
           style={[styles.resetButton, { backgroundColor: primaryColor }]}
-          onPress={onReset}
+          onPress={changeSetup}
         >
           <Text style={styles.resetButtonText}>Cambiar ajustes</Text>
         </TouchableOpacity>

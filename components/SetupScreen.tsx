@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -23,14 +23,14 @@ const INTERESTS = [
 ];
 
 const PRIMARY_COLORS = [
-  '#007AFF', // Azul original
-  '#FF3B30', // Rojo
-  '#34C759', // Verde
-  '#FF9500', // Naranja
-  '#5856D6', // Morado
-  '#AF52DE', // Violeta
-  '#FF2D55', // Rosa fuerte
-  '#00C7BE'  // Turquesa
+  '#007AFF',
+  '#FF3B30',
+  '#34C759',
+  '#FF9500',
+  '#5856D6',
+  '#AF52DE',
+  '#FF2D55',
+  '#00C7BE'
 ];
 
 interface SetupScreenProps {
@@ -46,6 +46,41 @@ export default function SetupScreen({ onComplete }: SetupScreenProps) {
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [primaryColor, setPrimaryColor] = useState('#007AFF');
   const [loading, setLoading] = useState(false);
+
+  // ✅ Cargar datos guardados
+  useEffect(() => {
+    const loadPreferences = async () => {
+      try {
+        const stored = await AsyncStorage.getItem('payday_preferences');
+
+        if (!stored) return;
+
+        const prefs = JSON.parse(stored);
+
+        if (prefs.frequency) setFrequency(prefs.frequency);
+
+        if (prefs.payment_days?.length) {
+          setPaymentDay1(String(prefs.payment_days[0]));
+
+          if (prefs.payment_days[1]) {
+            setPaymentDay2(String(prefs.payment_days[1]));
+          }
+        }
+
+        if (prefs.interests) {
+          setSelectedInterests(prefs.interests);
+        }
+
+        if (prefs.primary_color) {
+          setPrimaryColor(prefs.primary_color);
+        }
+      } catch (error) {
+        console.error('Error loading preferences:', error);
+      }
+    };
+
+    loadPreferences();
+  }, []);
 
   const toggleInterest = (interest: string) => {
     if (selectedInterests.includes(interest)) {

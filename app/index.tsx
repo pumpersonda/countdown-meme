@@ -4,12 +4,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import SetupScreen from '@/components/SetupScreen';
 import CountdownScreen from '@/components/CountdownScreen';
+import { requestNotificationPermissions } from '@/utils/requestNotificationPermissions';
 
 export default function Index() {
   const [hasPreferences, setHasPreferences] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    requestNotificationPermissions();
     checkPreferences();
   }, []);
 
@@ -40,6 +42,10 @@ export default function Index() {
     setHasPreferences(false);
   };
 
+  const changeSetup = async () => {
+    setHasPreferences(false);
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -51,7 +57,7 @@ export default function Index() {
   return (
     <View style={styles.container}>
       {hasPreferences ? (
-        <CountdownScreen onReset={handleReset} />
+        <CountdownScreen changeSetup={changeSetup} />
       ) : (
         <SetupScreen onComplete={handleSetupComplete} />
       )}
