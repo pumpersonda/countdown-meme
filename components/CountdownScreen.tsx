@@ -11,6 +11,7 @@ import {
   calculateDaysUntilPayday,
   getMoodCategory
 } from '@/utils/dateCalculations';
+import { generateImage } from '@/utils/imageService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface PaydayPreferences {
@@ -28,79 +29,14 @@ interface CountdownScreenProps {
   onReset: () => void;
 }
 
-// === NUEVA ESTRUCTURA: Imágenes por INTERÉS + por estado de ánimo ===
-const IMAGES_DB: Record<string, Record<string, string[]>> = {
-  generic: {
-    happy: [
-      'https://images.pexels.com/photos/1404819/pexels-photo-1404819.jpeg',
-      'https://images.pexels.com/photos/91227/pexels-photo-91227.jpeg'
-    ],
-    neutral: [
-      'https://images.pexels.com/photos/1741205/pexels-photo-1741205.jpeg',
-      'https://images.pexels.com/photos/356378/pexels-photo-356378.jpeg'
-    ],
-    worried: [
-      'https://images.pexels.com/photos/1420701/pexels-photo-1420701.jpeg',
-      'https://images.pexels.com/photos/3772618/pexels-photo-3772618.jpeg'
-    ],
-    sad: [
-      'https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExNnB3NjdkMDF0ZjhyYTN5M256cnF5M2cxOWJwcnVxdDVsd3Q4Z29rZiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/98MaHVwJOmWMz4cz1K/giphy.gif',
-      'https://images.pexels.com/photos/2194261/pexels-photo-2194261.jpeg',
-      'https://images.pexels.com/photos/1024311/pexels-photo-1024311.jpeg'
-    ]
-  },
-
-  // Ejemplo completo para "gatos" (puedes copiar esta estructura para los demás intereses)
-  gatos: {
-    happy: [
-      'https://images.pexels.com/photos/104827/pexels-photo-104827.jpeg',
-      'https://images.pexels.com/photos/1170986/pexels-photo-1170986.jpeg',
-      'https://images.pexels.com/photos/45201/pexels-photo-45201.jpeg'
-    ],
-    neutral: [
-      'https://images.pexels.com/photos/20787/pexels-photo-20787.jpeg',
-      'https://images.pexels.com/photos/144098/pexels-photo-144098.jpeg'
-    ],
-    worried: [
-      'https://images.pexels.com/photos/248547/pexels-photo-248547.jpeg'
-    ],
-    sad: [
-      'https://images.pexels.com/photos/25033908/pexels-photo-25033908.jpeg',
-      'https://images.pexels.com/photos/1564504/pexels-photo-1564504.jpeg'
-    ]
-  },
-
-  // Puedes duplicar o personalizar para otros intereses
-  mascotas: {
-    happy: [
-      'https://images.pexels.com/photos/1805164/pexels-photo-1805164.jpeg', // perro feliz
-      'https://images.pexels.com/photos/1809343/pexels-photo-1809343.jpeg'
-    ],
-    neutral: [],
-    worried: [],
-    sad: []
-  },
-
-  // TODO: agrega aquí memes, videojuegos, películas, etc.
-  memes: { happy: [], neutral: [], worried: [], sad: [] },
-  videojuegos: { happy: [], neutral: [], worried: [], sad: [] },
-  películas: { happy: [], neutral: [], worried: [], sad: [] },
-  series: { happy: [], neutral: [], worried: [], sad: [] },
-  música: { happy: [], neutral: [], worried: [], sad: [] },
-  deportes: { happy: [], neutral: [], worried: [], sad: [] },
-  comida: { happy: [], neutral: [], worried: [], sad: [] },
-  viajes: { happy: [], neutral: [], worried: [], sad: [] }
-};
 
 export default function CountdownScreen({ onReset }: CountdownScreenProps) {
   const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [preferences, setPreferences] = useState<PaydayPreferences | null>(null);
   const [primaryColor, setPrimaryColor] = useState('#007AFF');
-
-  const [selectedCategory, setSelectedCategory] = useState<string>('neutral');
-  const [imageIndex, setImageIndex] = useState(0);
-  const [currentInterest, setCurrentInterest] = useState<string>('generic'); // ← NUEVO
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageLoading, setImageLoading] = useState(false);
 
   useEffect(() => {
     loadPreferences();
@@ -112,29 +48,14 @@ export default function CountdownScreen({ onReset }: CountdownScreenProps) {
       if (!stored) return;
 
       const data: PaydayPreferences = JSON.parse(stored);
-
       setPreferences(data);
       setPrimaryColor(data.primary_color || '#007AFF');
 
-      // === NUEVA LÓGICA: elegimos un interés del usuario al azar ===
-      const userInterests = data.interests || [];
-      const chosenInterest =
-        userInterests.length > 0
-          ? userInterests[Math.floor(Math.random() * userInterests.length)]
-          : 'generic';
-
-      setCurrentInterest(chosenInterest);
-
-      const days = calculateDaysUntilPayday(
-        data.frequency,
-        data.payment_days
-      );
-
+      const days = calculateDaysUntilPayday(data.frequency, data.payment_days);
       setDaysRemaining(days);
 
       const mood = getMoodCategory(days);
-      setSelectedCategory(mood);
-      setImageIndex(0);
+      fetchImage(mood, data.interests || []);
     } catch (error) {
       console.error('Error loading preferences:', error);
     } finally {
@@ -142,13 +63,28 @@ export default function CountdownScreen({ onReset }: CountdownScreenProps) {
     }
   };
 
-  // === NUEVA LÓGICA: imágenes del interés + mood (fallback a generic) ===
-  const images =
-    IMAGES_DB[currentInterest]?.[selectedCategory] ||
-    IMAGES_DB.generic[selectedCategory] ||
-    [];
+  const fetchImage = async (mood: string, interests: string[]) => {
+    setImageLoading(true);
+    setImageUrl(null);
+    try {
+      const url = await generateImage(mood, interests);
+      setImageUrl(url);
+      // base64 data URIs are already in memory — no network load needed
+      if (url.startsWith('data:')) {
+        setImageLoading(false);
+      }
+      // remote URLs: onLoadEnd on <Image> will turn off the spinner
+    } catch (error) {
+      console.error('Error generating image:', error);
+      setImageLoading(false);
+    }
+  };
 
-  const imageUrl = images[imageIndex];
+  const handleRefreshImage = () => {
+    if (!preferences) return;
+    const mood = getMoodCategory(daysRemaining ?? 99);
+    fetchImage(mood, preferences.interests || []);
+  };
 
   if (loading) {
     return (
@@ -180,15 +116,30 @@ export default function CountdownScreen({ onReset }: CountdownScreenProps) {
           te paguen
         </Text>
 
-        {imageUrl && (
-          <View style={styles.imageContainer}>
+        <View style={styles.imageContainer}>
+          {imageLoading && (
+            <ActivityIndicator size="large" color={primaryColor} style={styles.imageLoader} />
+          )}
+          {imageUrl && (
             <Image
               source={{ uri: imageUrl }}
-              style={styles.image}
-              resizeMode="cover"
+              style={[styles.image, imageLoading && { display: 'none' }]}
+              resizeMode="contain"
+              onLoadEnd={() => setImageLoading(false)}
+              onError={() => setImageLoading(false)}
             />
-          </View>
-        )}
+          )}
+        </View>
+
+<TouchableOpacity
+          style={[styles.refreshButton, { borderColor: primaryColor }]}
+          onPress={handleRefreshImage}
+          disabled={imageLoading}
+        >
+          <Text style={[styles.refreshButtonText, { color: primaryColor }]}>
+            Otra imagen
+          </Text>
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.resetButton, { backgroundColor: primaryColor }]}
@@ -240,11 +191,28 @@ const styles = StyleSheet.create({
     height: '100%'
   },
 
+  imageLoader: {
+    flex: 1,
+  },
+
+refreshButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    borderWidth: 2,
+    marginTop: 12,
+  },
+
+  refreshButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+
   resetButton: {
     paddingVertical: 16,
     paddingHorizontal: 32,
     borderRadius: 12,
-    marginTop: 20
+    marginTop: 12,
   },
 
   resetButtonText: {
